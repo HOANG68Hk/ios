@@ -44,10 +44,10 @@ function resetGame() {
   draw();
 }
 
-// 📤 Gửi điểm lên server
+// 📤 Gửi điểm lên server (backend của bạn)
 async function sendScore(name, score) {
   try {
-    const res = await fetch("https://flappy-bf49.onrender.com/submit", {
+    const res = await fetch("http://127.0.0.1:10000/submit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, score }),
@@ -68,10 +68,14 @@ function showGameOver() {
   ctx.font = "24px Arial";
   ctx.fillText(`Điểm: ${score}`, canvas.width / 2 - 60, canvas.height / 2 + 20);
 
-  setTimeout(() => {
-    const name = prompt("Nhập tên của bạn để lưu điểm:");
-    if (name) sendScore(name, score);
-  }, 400);
+  // 🟢 Tự động lưu điểm bằng username đăng nhập
+  const username = localStorage.getItem("username");
+  if (username) {
+    sendScore(username, score);
+  } else {
+    alert("⚠️ Bạn chưa đăng nhập — điểm không được lưu!");
+    window.location.href = "login.html";
+  }
 }
 
 // 🔁 Nút chức năng
@@ -88,7 +92,7 @@ async function showLeaderboard() {
   list.innerHTML = "<li>⏳ Đang tải...</li>";
 
   try {
-    const res = await fetch("https://flappy-bf49.onrender.com/scores");
+    const res = await fetch("http://127.0.0.1:10000/scores");
     if (!res.ok) throw new Error("Lỗi HTTP: " + res.status);
     const data = await res.json();
     list.innerHTML = data
