@@ -41,9 +41,17 @@
     <button id="restartBtnOver">🔁 Chơi lại</button>
   </div>
 
+  <!-- 🕹️ GAME SCRIPT -->
   <script src="game.js"></script>
 
   <script>
+    // ✅ KIỂM TRA NGƯỜI DÙNG ĐÃ ĐĂNG NHẬP CHƯA
+    const username = localStorage.getItem("username");
+    if (!username) {
+      alert("Vui lòng đăng nhập trước khi chơi!");
+      window.location.href = "login.html";
+    }
+
     // ---------- MENU CÀI ĐẶT ----------
     const settingsBtn = document.getElementById("settingsBtn");
     const settingsMenu = document.getElementById("settingsMenu");
@@ -59,7 +67,6 @@
 
     // ---------- NÚT CÀI ĐẶT ----------
     document.getElementById("homeBtn").addEventListener("click", () => {
-      // về trang chủ
       window.location.href = "index.html";
     });
 
@@ -69,14 +76,19 @@
 
     document.getElementById("resetBtn").addEventListener("click", () => {
       settingsMenu.classList.add("hidden");
-      // gọi lại nút chơi lại
       if (typeof resetGame === "function") resetGame();
+    });
+
+    document.getElementById("menuLeaderboardBtn").addEventListener("click", () => {
+      showLeaderboard();
+      settingsMenu.classList.add("hidden");
     });
 
     // ---------- BẢNG XẾP HẠNG ----------
     const leaderboard = document.getElementById("leaderboard");
     document.getElementById("leaderboardBtn").addEventListener("click", () => {
       leaderboard.classList.remove("hidden");
+      showLeaderboard();
     });
     document.getElementById("closeLeaderboard").addEventListener("click", () => {
       leaderboard.classList.add("hidden");
@@ -87,6 +99,40 @@
       document.getElementById("gameOverScreen").classList.add("hidden");
       if (typeof resetGame === "function") resetGame();
     });
+
+    // ---------- GỬI ĐIỂM TỰ ĐỘNG ----------
+    function saveScoreAutomatically(score) {
+      const playerName = localStorage.getItem("username");
+      if (!playerName) return;
+
+      fetch("http://127.0.0.1:8000/save_score", {  // 🔧 Đổi sang API backend của bạn nếu cần
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: playerName, score: score }),
+      })
+      .then(res => res.json())
+      .then(data => console.log("✅ Điểm đã lưu:", data))
+      .catch(err => console.error("❌ Lỗi lưu điểm:", err));
+    }
+
+    // ⚡️ GẮN HÀM TOÀN CỤC CHO GAME.JS GỌI
+    window.saveScoreAutomatically = saveScoreAutomatically;
+
+    // ---------- HIỂN THỊ BẢNG XẾP HẠNG ----------
+    async function showLeaderboard() {
+      const list = document.getElementById("leaderboardList");
+      list.innerHTML = "<li>⏳ Đang tải...</li>";
+      try {
+        const res = await fetch("http://127.0.0.1:8000/scores"); // ⚙️ endpoint lấy điểm
+        const data = await res.json();
+        list.innerHTML = data
+          .map((p, i) => `<li>${i + 1}. <b>${p.name}</b> — ${p.score} điểm</li>`)
+          .join("");
+      } catch (err) {
+        console.error(err);
+        list.innerHTML = "<li>Lỗi khi tải bảng xếp hạng 😢</li>";
+      }
+    }
   </script>
 </body>
 </html>
